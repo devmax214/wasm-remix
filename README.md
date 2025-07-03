@@ -122,6 +122,12 @@ remix-wasm-app/
 - `greet(name)` - Personalized greeting
 - `calculate(operation, a, b)` - Arithmetic operations (add, subtract, multiply, divide)
 - `process_text(text)` - Text transformation (uppercase and reverse)
+- `scrape_website(url)` - **Website Scraping**:
+  - Fetches the HTML content of the given URL in the worker, then passes both the URL and the HTML to the Extism plugin for processing.
+  - The plugin extracts the page title, links, meta tags, visible text, and word count from the HTML.
+  - **Usage:**
+    - The worker fetches the URL and sends both `url` and `htmlContent` to the plugin.
+    - The plugin returns a JSON object with fields like `title`, `links`, `meta_tags`, `text_content`, `word_count`, and more.
 
 ## Development
 

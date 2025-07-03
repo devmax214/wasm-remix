@@ -59,6 +59,13 @@ export class ExtismPluginManager {
     return this.callFunction('process_text', JSON.stringify({ text }));
   }
 
+  async scrapeWebsite(url: string, htmlContent?: string): Promise<string> {
+    const input = htmlContent 
+      ? JSON.stringify({ url, html_content: htmlContent })
+      : JSON.stringify({ url });
+    return this.callFunction('scrape_website', input);
+  }
+
   isInitialized(): boolean {
     return this.plugin !== null;
   }

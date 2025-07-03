@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface ExtismWorkerMessage {
-  type: 'init' | 'greet' | 'calculate' | 'processText' | 'callFunction' | 'result' | 'ready' | 'error';
+  type: 'init' | 'greet' | 'calculate' | 'processText' | 'scrapeWebsite' | 'callFunction' | 'result' | 'ready' | 'error';
   data?: any;
   result?: string;
   error?: string;
@@ -110,6 +110,10 @@ export function useExtismWorker() {
     return createWorkerCall('processText', { text });
   }, [createWorkerCall]);
 
+  const scrapeWebsite = useCallback(async (url: string): Promise<string> => {
+    return createWorkerCall('scrapeWebsite', { url });
+  }, [createWorkerCall]);
+
   const callFunction = useCallback(async (functionName: string, input: string): Promise<string> => {
     return createWorkerCall('callFunction', { functionName, input });
   }, [createWorkerCall]);
@@ -119,6 +123,7 @@ export function useExtismWorker() {
     greet,
     calculate,
     processText,
+    scrapeWebsite,
     callFunction,
   };
 } 
