@@ -1,0 +1,33 @@
+{
+  "name": "package-extism",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Extism WebAssembly extension package",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc && vite build",
+    "build:wasm": "./build.sh",
+    "build:all": "npm run build:wasm && npm run build",
+    "dev": "vite build --watch",
+    "test": "node test/test.js",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "extism": "^2.0.0-rc13"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "@types/node": "^20.0.0"
+  },
+  "keywords": ["extism", "webassembly", "plugin"],
+  "author": "",
+  "license": "MIT"
+} 

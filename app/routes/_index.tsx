@@ -1,21 +1,42 @@
 import type { MetaFunction } from "@remix-run/node";
 import { useState } from "react";
 import { useWasmWorker } from "~/hooks/useWasmWorker";
+import { useExtismPlugin } from "~/hooks/useExtismPlugin";
 
 export const meta: MetaFunction = () => {
   return [
     { title: "Remix WebAssembly App" },
-    { name: "description", content: "A Remix app with WebAssembly and workers" },
+    { name: "description", content: "A Remix app with AssemblyScript WebAssembly and Extism plugins" },
   ];
 };
 
 export default function Index() {
+  // AssemblyScript WASM Worker state
   const [a, setA] = useState(5);
   const [b, setB] = useState(3);
   const [result, setResult] = useState<number | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   
+  // Extism Plugin state
+  const [extismName, setExtismName] = useState('Alice');
+  const [extismGreeting, setExtismGreeting] = useState<string | null>(null);
+  const [extismOperation, setExtismOperation] = useState('add');
+  const [extismA, setExtismA] = useState(10);
+  const [extismB, setExtismB] = useState(5);
+  const [extismCalcResult, setExtismCalcResult] = useState<string | null>(null);
+  const [extismText, setExtismText] = useState('Hello World');
+  const [extismTextResult, setExtismTextResult] = useState<string | null>(null);
+  const [isExtismProcessing, setIsExtismProcessing] = useState(false);
+  
   const { add, isReady, isLoading, error } = useWasmWorker();
+  const { 
+    greet, 
+    calculate: extismCalculate, 
+    processText, 
+    isReady: extismReady, 
+    isLoading: extismLoading, 
+    error: extismError 
+  } = useExtismPlugin();
 
   const handleCalculate = async () => {
     if (!isReady) return;
@@ -31,13 +52,55 @@ export default function Index() {
     }
   };
 
+  const handleExtismGreet = async () => {
+    if (!extismReady) return;
+    
+    setIsExtismProcessing(true);
+    try {
+      const greeting = await greet(extismName);
+      setExtismGreeting(greeting);
+    } catch (err) {
+      console.error('Extism greeting error:', err);
+    } finally {
+      setIsExtismProcessing(false);
+    }
+  };
+
+  const handleExtismCalculate = async () => {
+    if (!extismReady) return;
+    
+    setIsExtismProcessing(true);
+    try {
+      const result = await extismCalculate(extismOperation, extismA, extismB);
+      setExtismCalcResult(result);
+    } catch (err) {
+      console.error('Extism calculation error:', err);
+    } finally {
+      setIsExtismProcessing(false);
+    }
+  };
+
+  const handleExtismTextProcess = async () => {
+    if (!extismReady) return;
+    
+    setIsExtismProcessing(true);
+    try {
+      const result = await processText(extismText);
+      setExtismTextResult(result);
+    } catch (err) {
+      console.error('Extism text processing error:', err);
+    } finally {
+      setIsExtismProcessing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col items-center gap-16">
           <header className="flex flex-col items-center gap-9">
             <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-100 text-center">
-              Remix + WebAssembly + Workers
+              Remix + WebAssembly + Extism
             </h1>
             <div className="h-[144px] w-[434px]">
               <img
@@ -53,11 +116,11 @@ export default function Index() {
             </div>
           </header>
 
-          {/* WebAssembly Calculator */}
+          {/* AssemblyScript WebAssembly Calculator */}
           <div className="w-full max-w-md">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
               <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-6 text-center">
-                WebAssembly Calculator
+                AssemblyScript WASM Calculator
               </h2>
               
               {/* Status */}
@@ -133,6 +196,148 @@ export default function Index() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Extism Plugin */}
+          <div className="w-full max-w-2xl">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-6 text-center">
+                Extism WebAssembly Plugin
+              </h2>
+              
+              {/* Status */}
+              <div className="mb-6">
+                {extismLoading && (
+                  <div className="text-blue-600 dark:text-blue-400 text-sm text-center">
+                    Loading Extism plugin...
+                  </div>
+                )}
+                {extismReady && (
+                  <div className="text-green-600 dark:text-green-400 text-sm text-center">
+                    ✓ Extism plugin ready
+                  </div>
+                )}
+                {extismError && (
+                  <div className="text-red-600 dark:text-red-400 text-sm text-center">
+                    Error: {extismError}
+                  </div>
+                )}
+              </div>
+
+              {/* Plugin Functions */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Greet Function */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100">Greet</h3>
+                  <div>
+                    <label htmlFor="extism-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Name
+                    </label>
+                    <input
+                      id="extism-name"
+                      type="text"
+                      value={extismName}
+                      onChange={(e) => setExtismName(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      placeholder="Enter name"
+                    />
+                  </div>
+                  <button
+                    onClick={handleExtismGreet}
+                    disabled={!extismReady || isExtismProcessing}
+                    className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 disabled:cursor-not-allowed text-sm"
+                  >
+                    {isExtismProcessing ? 'Processing...' : 'Greet'}
+                  </button>
+                  {extismGreeting && (
+                    <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                      <div className="text-sm text-purple-800 dark:text-purple-200">{extismGreeting}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Calculate Function */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100">Calculate</h3>
+                  <div className="space-y-2">
+                    <div>
+                      <label htmlFor="extism-operation" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Operation
+                      </label>
+                      <select
+                        id="extism-operation"
+                        value={extismOperation}
+                        onChange={(e) => setExtismOperation(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
+                      >
+                        <option value="add">Add</option>
+                        <option value="subtract">Subtract</option>
+                        <option value="multiply">Multiply</option>
+                        <option value="divide">Divide</option>
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        value={extismA}
+                        onChange={(e) => setExtismA(Number(e.target.value))}
+                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
+                        placeholder="A"
+                      />
+                      <input
+                        type="number"
+                        value={extismB}
+                        onChange={(e) => setExtismB(Number(e.target.value))}
+                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
+                        placeholder="B"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleExtismCalculate}
+                    disabled={!extismReady || isExtismProcessing}
+                    className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 disabled:cursor-not-allowed text-sm"
+                  >
+                    {isExtismProcessing ? 'Processing...' : 'Calculate'}
+                  </button>
+                  {extismCalcResult && (
+                    <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                      <div className="text-sm text-purple-800 dark:text-purple-200">{extismCalcResult}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Text Processing Function */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100">Text Process</h3>
+                  <div>
+                    <label htmlFor="extism-text" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Text
+                    </label>
+                    <input
+                      id="extism-text"
+                      type="text"
+                      value={extismText}
+                      onChange={(e) => setExtismText(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      placeholder="Enter text"
+                    />
+                  </div>
+                  <button
+                    onClick={handleExtismTextProcess}
+                    disabled={!extismReady || isExtismProcessing}
+                    className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 disabled:cursor-not-allowed text-sm"
+                  >
+                    {isExtismProcessing ? 'Processing...' : 'Process'}
+                  </button>
+                  {extismTextResult && (
+                    <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                      <div className="text-sm text-purple-800 dark:text-purple-200">{extismTextResult}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
