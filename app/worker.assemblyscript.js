@@ -4,7 +4,7 @@ let wasmModule = null;
 // Import the WASM module using dynamic import
 async function loadWasmModule() {
   try {
-    const response = await fetch('/wasm/debug.wasm');
+    const response = await fetch('/wasm/assemblyscript-debug.wasm');
     if (!response.ok) {
       throw new Error(`Failed to load WASM module: ${response.statusText}`);
     }

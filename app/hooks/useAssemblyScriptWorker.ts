@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-interface WasmWorkerMessage {
+interface AssemblyScriptWorkerMessage {
   type: 'init' | 'add' | 'result' | 'ready' | 'error';
   data?: any;
   result?: number;
   error?: string;
 }
 
-export function useWasmWorker() {
+export function useAssemblyScriptWorker() {
   const workerRef = useRef<Worker | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -15,13 +15,13 @@ export function useWasmWorker() {
 
   useEffect(() => {
     // Use Vite's module worker import pattern
-    workerRef.current = new Worker(new URL('../wasm.worker.js', import.meta.url), {
+    workerRef.current = new Worker(new URL('../worker.assemblyscript.js', import.meta.url), {
       type: 'module',
     });
 
     const worker = workerRef.current;
 
-    worker.onmessage = (e: MessageEvent<WasmWorkerMessage>) => {
+    worker.onmessage = (e: MessageEvent<AssemblyScriptWorkerMessage>) => {
       const { type, result, error } = e.data;
 
       switch (type) {
@@ -69,7 +69,7 @@ export function useWasmWorker() {
       }
 
       const worker = workerRef.current;
-      const messageHandler = (e: MessageEvent<WasmWorkerMessage>) => {
+      const messageHandler = (e: MessageEvent<AssemblyScriptWorkerMessage>) => {
         const { type, result, error } = e.data;
 
         if (type === 'result') {

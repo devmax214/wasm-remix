@@ -1,7 +1,7 @@
 import type { MetaFunction } from "@remix-run/node";
 import { useState } from "react";
-import { useWasmWorker } from "~/hooks/useWasmWorker";
-import { useExtismPlugin } from "~/hooks/useExtismPlugin";
+import { useAssemblyScriptWorker } from "~/hooks/useAssemblyScriptWorker";
+import { useExtismWorker } from "~/hooks/useExtismWorker";
 
 export const meta: MetaFunction = () => {
   return [
@@ -11,86 +11,90 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Index() {
-  // AssemblyScript WASM Worker state
-  const [a, setA] = useState(5);
-  const [b, setB] = useState(3);
-  const [result, setResult] = useState<number | null>(null);
-  const [isCalculating, setIsCalculating] = useState(false);
-  
-  // Extism Plugin state
-  const [extismName, setExtismName] = useState('Alice');
-  const [extismGreeting, setExtismGreeting] = useState<string | null>(null);
-  const [extismOperation, setExtismOperation] = useState('add');
-  const [extismA, setExtismA] = useState(10);
-  const [extismB, setExtismB] = useState(5);
-  const [extismCalcResult, setExtismCalcResult] = useState<string | null>(null);
-  const [extismText, setExtismText] = useState('Hello World');
-  const [extismTextResult, setExtismTextResult] = useState<string | null>(null);
-  const [isExtismProcessing, setIsExtismProcessing] = useState(false);
-  
-  const { add, isReady, isLoading, error } = useWasmWorker();
+  const [num1, setNum1] = useState(5);
+  const [num2, setNum2] = useState(3);
+  const [assemblyResult, setAssemblyResult] = useState<number | null>(null);
+  const [assemblyLoading, setAssemblyLoading] = useState(false);
+  const [assemblyError, setAssemblyError] = useState<string | null>(null);
+
+  // Extism Plugin
+  const [extismName, setExtismName] = useState("World");
+  const [greetResult, setGreetResult] = useState<string | null>(null);
+  const [greetLoading, setGreetLoading] = useState(false);
+  const [greetError, setGreetError] = useState<string | null>(null);
+
+  const [calcOperation, setCalcOperation] = useState("add");
+  const [calcNum1, setCalcNum1] = useState(0);
+  const [calcNum2, setCalcNum2] = useState(0);
+  const [calcResult, setCalcResult] = useState<string | null>(null);
+  const [calcLoading, setCalcLoading] = useState(false);
+  const [calcError, setCalcError] = useState<string | null>(null);
+
+  const [processTextInput, setProcessTextInput] = useState("");
+  const [processTextResult, setProcessTextResult] = useState<string | null>(null);
+  const [processTextLoading, setProcessTextLoading] = useState(false);
+  const [processTextError, setProcessTextError] = useState<string | null>(null);
+
+  const { add, isReady, isLoading, error } = useAssemblyScriptWorker();
   const { 
     greet, 
-    calculate: extismCalculate, 
+    calculate, 
     processText, 
+    callFunction,
     isReady: extismReady, 
-    isLoading: extismLoading, 
-    error: extismError 
-  } = useExtismPlugin();
+    isLoading: extismIsLoading, 
+    error: extismErrorState 
+  } = useExtismWorker();
 
-  const handleCalculate = async () => {
-    if (!isReady) return;
-    
-    setIsCalculating(true);
+  const handleAssemblyAdd = async () => {
     try {
-      const calculatedResult = await add(a, b);
-      setResult(calculatedResult);
+      setAssemblyLoading(true);
+      setAssemblyError(null);
+      const result = await add(num1, num2);
+      setAssemblyResult(result);
     } catch (err) {
-      console.error('Calculation error:', err);
+      setAssemblyError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
-      setIsCalculating(false);
+      setAssemblyLoading(false);
     }
   };
 
   const handleExtismGreet = async () => {
-    if (!extismReady) return;
-    
-    setIsExtismProcessing(true);
     try {
-      const greeting = await greet(extismName);
-      setExtismGreeting(greeting);
+      setGreetLoading(true);
+      setGreetError(null);
+      const result = await greet(extismName);
+      setGreetResult(result);
     } catch (err) {
-      console.error('Extism greeting error:', err);
+      setGreetError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
-      setIsExtismProcessing(false);
+      setGreetLoading(false);
     }
   };
 
   const handleExtismCalculate = async () => {
-    if (!extismReady) return;
-    
-    setIsExtismProcessing(true);
     try {
-      const result = await extismCalculate(extismOperation, extismA, extismB);
-      setExtismCalcResult(result);
+      setCalcLoading(true);
+      setCalcError(null);
+      const result = await calculate(calcOperation, calcNum1, calcNum2);
+      setCalcResult(result);
     } catch (err) {
-      console.error('Extism calculation error:', err);
+      setCalcError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
-      setIsExtismProcessing(false);
+      setCalcLoading(false);
     }
   };
 
-  const handleExtismTextProcess = async () => {
-    if (!extismReady) return;
-    
-    setIsExtismProcessing(true);
+  const handleExtismProcessText = async () => {
     try {
-      const result = await processText(extismText);
-      setExtismTextResult(result);
+      setProcessTextLoading(true);
+      setProcessTextError(null);
+      const result = await processText(processTextInput);
+      setProcessTextResult(result);
     } catch (err) {
-      console.error('Extism text processing error:', err);
+      setProcessTextError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
-      setIsExtismProcessing(false);
+      setProcessTextLoading(false);
     }
   };
 
@@ -127,12 +131,12 @@ export default function Index() {
               <div className="mb-6">
                 {isLoading && (
                   <div className="text-blue-600 dark:text-blue-400 text-sm text-center">
-                    Loading WebAssembly module...
+                    Loading AssemblyScript WASM...
                   </div>
                 )}
                 {isReady && (
                   <div className="text-green-600 dark:text-green-400 text-sm text-center">
-                    ✓ WebAssembly ready
+                    ✓ AssemblyScript WASM ready
                   </div>
                 )}
                 {error && (
@@ -151,8 +155,8 @@ export default function Index() {
                   <input
                     id="input-a"
                     type="number"
-                    value={a}
-                    onChange={(e) => setA(Number(e.target.value))}
+                    value={num1}
+                    onChange={(e) => setNum1(Number(e.target.value))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                     placeholder="Enter first number"
                   />
@@ -165,8 +169,8 @@ export default function Index() {
                   <input
                     id="input-b"
                     type="number"
-                    value={b}
-                    onChange={(e) => setB(Number(e.target.value))}
+                    value={num2}
+                    onChange={(e) => setNum2(Number(e.target.value))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                     placeholder="Enter second number"
                   />
@@ -175,23 +179,34 @@ export default function Index() {
 
               {/* Calculate Button */}
               <button
-                onClick={handleCalculate}
-                disabled={!isReady || isCalculating}
+                onClick={handleAssemblyAdd}
+                disabled={!isReady || assemblyLoading}
                 className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 disabled:cursor-not-allowed"
               >
-                {isCalculating ? 'Calculating...' : 'Add Numbers'}
+                {assemblyLoading ? 'Calculating...' : 'Add Numbers'}
               </button>
 
               {/* Result */}
-              {result !== null && (
+              {assemblyResult !== null && (
                 <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                   <div className="text-center">
                     <div className="text-sm text-green-700 dark:text-green-300 mb-1">Result</div>
                     <div className="text-2xl font-bold text-green-800 dark:text-green-200">
-                      {a} + {b} = {result}
+                      {num1} + {num2} = {assemblyResult}
                     </div>
                     <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                      Calculated in WebAssembly worker
+                      Calculated in AssemblyScript WASM
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {assemblyError && (
+                <div className="mt-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <div className="text-center">
+                    <div className="text-sm text-red-700 dark:text-red-300 mb-1">Error</div>
+                    <div className="text-2xl font-bold text-red-800 dark:text-red-200">
+                      {assemblyError}
                     </div>
                   </div>
                 </div>
@@ -208,7 +223,7 @@ export default function Index() {
               
               {/* Status */}
               <div className="mb-6">
-                {extismLoading && (
+                {extismIsLoading && (
                   <div className="text-blue-600 dark:text-blue-400 text-sm text-center">
                     Loading Extism plugin...
                   </div>
@@ -218,9 +233,9 @@ export default function Index() {
                     ✓ Extism plugin ready
                   </div>
                 )}
-                {extismError && (
+                {extismErrorState && (
                   <div className="text-red-600 dark:text-red-400 text-sm text-center">
-                    Error: {extismError}
+                    Error: {extismErrorState}
                   </div>
                 )}
               </div>
@@ -245,14 +260,19 @@ export default function Index() {
                   </div>
                   <button
                     onClick={handleExtismGreet}
-                    disabled={!extismReady || isExtismProcessing}
+                    disabled={!extismReady || greetLoading}
                     className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 disabled:cursor-not-allowed text-sm"
                   >
-                    {isExtismProcessing ? 'Processing...' : 'Greet'}
+                    {greetLoading ? 'Processing...' : 'Greet'}
                   </button>
-                  {extismGreeting && (
+                  {greetResult && (
                     <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
-                      <div className="text-sm text-purple-800 dark:text-purple-200">{extismGreeting}</div>
+                      <div className="text-sm text-purple-800 dark:text-purple-200">{greetResult}</div>
+                    </div>
+                  )}
+                  {greetError && (
+                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <div className="text-sm text-red-800 dark:text-red-200">{greetError}</div>
                     </div>
                   )}
                 </div>
@@ -267,8 +287,8 @@ export default function Index() {
                       </label>
                       <select
                         id="extism-operation"
-                        value={extismOperation}
-                        onChange={(e) => setExtismOperation(e.target.value)}
+                        value={calcOperation}
+                        onChange={(e) => setCalcOperation(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
                       >
                         <option value="add">Add</option>
@@ -280,15 +300,15 @@ export default function Index() {
                     <div className="grid grid-cols-2 gap-2">
                       <input
                         type="number"
-                        value={extismA}
-                        onChange={(e) => setExtismA(Number(e.target.value))}
+                        value={calcNum1}
+                        onChange={(e) => setCalcNum1(Number(e.target.value))}
                         className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
                         placeholder="A"
                       />
                       <input
                         type="number"
-                        value={extismB}
-                        onChange={(e) => setExtismB(Number(e.target.value))}
+                        value={calcNum2}
+                        onChange={(e) => setCalcNum2(Number(e.target.value))}
                         className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
                         placeholder="B"
                       />
@@ -296,14 +316,19 @@ export default function Index() {
                   </div>
                   <button
                     onClick={handleExtismCalculate}
-                    disabled={!extismReady || isExtismProcessing}
+                    disabled={!extismReady || calcLoading}
                     className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 disabled:cursor-not-allowed text-sm"
                   >
-                    {isExtismProcessing ? 'Processing...' : 'Calculate'}
+                    {calcLoading ? 'Processing...' : 'Calculate'}
                   </button>
-                  {extismCalcResult && (
+                  {calcResult && (
                     <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
-                      <div className="text-sm text-purple-800 dark:text-purple-200">{extismCalcResult}</div>
+                      <div className="text-sm text-purple-800 dark:text-purple-200">{calcResult}</div>
+                    </div>
+                  )}
+                  {calcError && (
+                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <div className="text-sm text-red-800 dark:text-red-200">{calcError}</div>
                     </div>
                   )}
                 </div>
@@ -318,22 +343,27 @@ export default function Index() {
                     <input
                       id="extism-text"
                       type="text"
-                      value={extismText}
-                      onChange={(e) => setExtismText(e.target.value)}
+                      value={processTextInput}
+                      onChange={(e) => setProcessTextInput(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       placeholder="Enter text"
                     />
                   </div>
                   <button
-                    onClick={handleExtismTextProcess}
-                    disabled={!extismReady || isExtismProcessing}
+                    onClick={handleExtismProcessText}
+                    disabled={!extismReady || processTextLoading}
                     className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 disabled:cursor-not-allowed text-sm"
                   >
-                    {isExtismProcessing ? 'Processing...' : 'Process'}
+                    {processTextLoading ? 'Processing...' : 'Process'}
                   </button>
-                  {extismTextResult && (
+                  {processTextResult && (
                     <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
-                      <div className="text-sm text-purple-800 dark:text-purple-200">{extismTextResult}</div>
+                      <div className="text-sm text-purple-800 dark:text-purple-200">{processTextResult}</div>
+                    </div>
+                  )}
+                  {processTextError && (
+                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <div className="text-sm text-red-800 dark:text-red-200">{processTextError}</div>
                     </div>
                   )}
                 </div>

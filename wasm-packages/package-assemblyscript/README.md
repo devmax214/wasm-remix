@@ -1,121 +1,183 @@
-# WASM Module
+# AssemblyScript WebAssembly Package
 
-This directory contains the AssemblyScript WebAssembly module for the Remix WASM application.
+This package contains AssemblyScript WebAssembly code that provides fast numerical calculations in the browser.
 
-## Overview
+## Features
 
-This module is written in AssemblyScript and compiled to WebAssembly (WASM) for high-performance computation in the browser. It provides native-speed operations that can be called from JavaScript.
+- **Fast Arithmetic**: Optimized addition operations in WebAssembly
+- **Type Safety**: Full TypeScript support with AssemblyScript
+- **Background Processing**: Runs in Web Workers for non-blocking UI
+- **Easy Integration**: Simple React hooks for seamless usage
 
-## Project Structure
+## Structure
 
 ```
-wasm-module/
-├── assembly/          # AssemblyScript source code
-│   ├── index.ts      # Main entry point
-│   └── tsconfig.json # TypeScript configuration for AssemblyScript
-├── build/            # Compiled output (generated)
-├── tests/            # Test files
-├── asconfig.json     # AssemblyScript compiler configuration
-├── package.json      # Node.js dependencies and scripts
-└── index.html        # Development server entry point
+package-assemblyscript/
+├── assembly/
+│   ├── index.ts          # Main AssemblyScript source
+│   └── tsconfig.json     # TypeScript configuration
+├── asconfig.json         # AssemblyScript build configuration
+├── package.json          # Package dependencies and scripts
+├── index.html            # Test page
+├── README.md             # This file
+└── tests/                # Test files
 ```
 
-## Prerequisites
+## Current Functions
 
-- Node.js (v16 or higher)
-- npm or yarn
+### `add(a: i32, b: i32): i32`
+Fast integer addition operation in WebAssembly.
 
-## Installation
+**Parameters:**
+- `a` (i32): First integer
+- `b` (i32): Second integer
 
-```bash
-npm install
+**Returns:**
+- `i32`: Sum of a and b
+
+**Example:**
+```typescript
+const result = add(5, 3); // Returns 8
 ```
 
 ## Development
 
-### Build the WASM module
+### Prerequisites
 
-```bash
-# Build debug version (with source maps and debugging info)
-npm run asbuild:debug
+- Node.js 18+
+- npm or yarn
 
-# Build release version (optimized for production)
-npm run asbuild:release
+### Setup
 
-# Build both debug and release versions
-npm run asbuild
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Build the WebAssembly module:
+   ```bash
+   npm run build
+   ```
+
+3. Test the build:
+   ```bash
+   npm run test
+   ```
+
+### Adding New Functions
+
+1. Edit `assembly/index.ts`
+2. Add your function:
+   ```typescript
+   export function multiply(a: i32, b: i32): i32 {
+     return a * b;
+   }
+   ```
+3. Build: `npm run build`
+4. Update the worker in `app/worker.assemblyscript.js`:
+   ```javascript
+   case 'multiply':
+     if (!wasmModule) {
+       await loadWasmModule();
+     }
+     const { a, b } = data;
+     const result = wasmModule.multiply(a, b);
+     self.postMessage({ type: 'result', result });
+     break;
+   ```
+5. Update the hook in `app/hooks/useAssemblyScriptWorker.ts`:
+   ```typescript
+   const multiply = useCallback((a: number, b: number): Promise<number> => {
+     return new Promise((resolve, reject) => {
+       if (!workerRef.current) {
+         reject(new Error('Worker not initialized'));
+         return;
+       }
+
+       if (!isReady) {
+         reject(new Error('Worker not ready'));
+         return;
+       }
+
+       const worker = workerRef.current;
+       const messageHandler = (e: MessageEvent<AssemblyScriptWorkerMessage>) => {
+         const { type, result, error } = e.data;
+
+         if (type === 'result') {
+           worker.removeEventListener('message', messageHandler);
+           resolve(result!);
+         } else if (type === 'error') {
+           worker.removeEventListener('message', messageHandler);
+           reject(new Error(error || 'Unknown error'));
+         }
+       };
+
+       worker.addEventListener('message', messageHandler);
+       worker.postMessage({ type: 'multiply', data: { a, b } });
+     });
+   }, [isReady]);
+   ```
+
+## Integration
+
+### Web Worker (`app/worker.assemblyscript.js`)
+- Handles WASM loading and execution
+- Provides message-based communication
+- Manages memory and lifecycle
+- Uses `WebAssembly.instantiate` for better compatibility
+
+### React Hook (`app/hooks/useAssemblyScriptWorker.ts`)
+- Provides easy access to WASM functions
+- Manages worker state and lifecycle
+- Handles errors and loading states
+- Uses Vite's module worker import pattern
+
+### Usage Example
+
+```typescript
+import { useAssemblyScriptWorker } from '~/hooks/useAssemblyScriptWorker';
+
+function MyComponent() {
+  const { add, isReady, isLoading, error } = useAssemblyScriptWorker();
+  
+  const handleCalculation = async () => {
+    if (isReady) {
+      try {
+        const result = await add(5, 3);
+        console.log('Result:', result); // 8
+      } catch (err) {
+        console.error('Calculation error:', err);
+      }
+    }
+  };
+  
+  return (
+    <button onClick={handleCalculation} disabled={!isReady}>
+      Calculate
+    </button>
+  );
+}
 ```
 
-### Run tests
+## Build Output
 
-```bash
-npm test
-```
+The build process generates:
+- `build/debug.wasm` - WebAssembly binary (development)
+- `build/release.wasm` - WebAssembly binary (production)
 
-### Start development server
+These files are copied to `public/wasm/` for use in the main application:
+- `public/wasm/assemblyscript-debug.wasm` - Debug version
+- `public/wasm/assemblyscript.wasm` - Release version
 
-```bash
-npm start
-```
+## Performance
 
-This will start a local server to test the WASM module in the browser.
-
-## Build Configuration
-
-The build process is configured in `asconfig.json`:
-
-- **Debug target**: Includes source maps and debugging information
-- **Release target**: Optimized for production with level 3 optimization
-
-## Usage
-
-The compiled WASM module exports functions that can be imported and used in JavaScript:
-
-```javascript
-import { yourFunction } from './wasm-module';
-
-// Use the WASM function
-const result = yourFunction(42);
-```
-
-## Integration with Remix
-
-This WASM module is integrated with the main Remix application through:
-
-1. The compiled WASM file is copied to `public/wasm/` directory
-2. A Web Worker (`app/wasm.worker.js`) handles WASM loading and execution
-3. React hooks (`app/hooks/useWasmWorker.ts`) provide easy access to WASM functions
-
-## Development Workflow
-
-1. Write AssemblyScript code in the `assembly/` directory
-2. Build the module using `npm run asbuild`
-3. Test your changes with `npm test`
-4. The compiled WASM file will be available for the main application
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Build fails**: Make sure you have AssemblyScript installed globally or as a dev dependency
-2. **WASM not loading**: Check that the build output is correctly placed in the public directory
-3. **Type errors**: Ensure your AssemblyScript code follows the language constraints
-
-### Debugging
-
-- Use the debug build for development as it includes source maps
-- Check the browser console for WASM loading errors
-- Use the development server to test WASM functionality in isolation
-
-## Contributing
-
-When adding new functionality:
-
-1. Add your AssemblyScript code to the `assembly/` directory
-2. Update tests in the `tests/` directory
-3. Rebuild the module with `npm run asbuild`
-4. Test integration with the main application
+AssemblyScript WebAssembly provides:
+- **Near-native performance** for numerical operations
+- **Small binary size** compared to other WASM languages
+- **Fast startup time** with minimal overhead
+- **Background execution** via Web Workers
+- **Type safety** with TypeScript-like syntax
 
 ## License
 
-This project follows the same license as the main application. 
+MIT License 

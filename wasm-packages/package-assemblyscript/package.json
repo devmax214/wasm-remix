@@ -10,6 +10,8 @@
     "asbuild:debug": "asc assembly/index.ts --target debug",
     "asbuild:release": "asc assembly/index.ts --target release",
     "asbuild": "npm run asbuild:debug && npm run asbuild:release",
+    "copy-wasm": "cp build/release.wasm ../../public/wasm/assemblyscript.wasm && cp build/debug.wasm ../../public/wasm/assemblyscript-debug.wasm",
+    "build": "npm run asbuild && npm run copy-wasm",
     "test": "node tests",
     "start": "npx serve ."
   },
