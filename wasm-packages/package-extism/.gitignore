@@ -1,0 +1,27 @@
+# Node
+node_modules/
+dist/
+
+# Rust
+/target/
+Cargo.lock
+
+# WASM outputs
+*.wasm
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Misc
+.DS_Store
+.env
+.idea/
+.vscode/
+
+# Test outputs
+coverage/
+
+# Ignore built WASM copied to public (handled by main app)
+../../public/wasm/extism-plugin.wasm 
