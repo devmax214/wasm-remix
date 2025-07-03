@@ -24,7 +24,7 @@ self.onmessage = async (e) => {
     const { type, data } = e.data;
     
     // Initialize plugin if not already loaded (except for init message)
-    if (type !== 'init' && !extismPlugin) {
+    if (!extismPlugin) {
       await loadExtismPlugin();
     }
     
@@ -74,7 +74,6 @@ self.onmessage = async (e) => {
         self.postMessage({ type: 'error', error: 'Unknown message type' });
     }
   } catch (error) {
-    console.error('Worker error:', error);
     self.postMessage({ type: 'error', error: error.message });
   }
 };
