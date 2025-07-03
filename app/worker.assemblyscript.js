@@ -1,10 +1,9 @@
-let wasmInstance = null;
 let wasmModule = null;
 
 // Import the WASM module using dynamic import
 async function loadWasmModule() {
   try {
-    const response = await fetch('/wasm/assemblyscript-debug.wasm');
+    const response = await fetch('/wasm/assemblyscript.wasm');
     if (!response.ok) {
       throw new Error(`Failed to load WASM module: ${response.statusText}`);
     }
@@ -18,7 +17,6 @@ async function loadWasmModule() {
       }
     });
     
-    wasmInstance = result.instance;
     wasmModule = result.instance.exports;
     
     console.log('WASM module loaded successfully');
@@ -31,19 +29,17 @@ async function loadWasmModule() {
 self.onmessage = async (e) => {
   try {
     const { type, data } = e.data;
-    
+
+    if (!wasmModule) {
+      await loadWasmModule();
+    }
+
     switch (type) {
       case 'init':
-        if (!wasmInstance) {
-          await loadWasmModule();
-        }
         self.postMessage({ type: 'ready' });
         break;
         
       case 'add':
-        if (!wasmModule) {
-          await loadWasmModule();
-        }
         const { a, b } = data;
         const result = wasmModule.add(a, b);
         self.postMessage({ type: 'result', result });
